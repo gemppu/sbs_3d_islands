@@ -79,7 +79,8 @@ function createShader (gl, sourceCode, type) {
                 new Float32Array(positions),
                 gl.STATIC_DRAW);
 
-  var u_resolution = gl.getUniformLocation(program,"u_resolution")
+  var u_resolution = gl.getUniformLocation(program,"u_resolution");
+  var u_time = gl.getUniformLocation(program,"u_time");
 
 
 function draw(){
@@ -97,10 +98,19 @@ function draw(){
 
   gl.useProgram(program);
 
-  gl.uniform2fv(u_resolution,[650.,460.]);
+  newtime = new Date();
+  timems = newtime.getTime() - start.getTime();
+  time = timems/1000.;
+  console.log(time);
+  gl.uniform1f(u_time,time);
+  console.log(window.innerWidth);
+	
+  gl.uniform2fv(u_resolution,[window.innerWidth, window.innerHeight]);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  window.requestAnimationFrame(draw);
 }
   window.requestAnimationFrame(draw);
+  start = new Date();
   // Set clear color to black, fully opaque
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   // Clear the color buffer with specified clear color
