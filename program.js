@@ -1,10 +1,10 @@
 
 window.onload = function init() {
   const canvas = document.querySelector("#glCanvas");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight
   // Initialize the GL context
   const gl = canvas.getContext("webgl");
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
 
   // Only continue if WebGL is available and working
   if (gl === null) {
