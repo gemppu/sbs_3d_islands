@@ -3,6 +3,8 @@ window.onload = function init() {
   const canvas = document.querySelector("#glCanvas");
   // Initialize the GL context
   const gl = canvas.getContext("webgl");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
   // Only continue if WebGL is available and working
   if (gl === null) {
@@ -84,7 +86,10 @@ function createShader (gl, sourceCode, type) {
 
 
 function draw(){
-  console.log("asd");
+  //resize canvas
+  
+  
+  //
   gl.clearColor(1.0, 0.6, 0.0, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -103,9 +108,8 @@ function draw(){
   time = timems/1000.;
   console.log(time);
   gl.uniform1f(u_time,time);
-  console.log(window.innerWidth);
 	
-  gl.uniform2fv(u_resolution,[window.innerWidth, window.innerHeight]);
+  gl.uniform2fv(u_resolution,[canvas.width, canvas.height]);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   window.requestAnimationFrame(draw);
 }
