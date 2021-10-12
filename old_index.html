@@ -1,0 +1,126 @@
+<html>
+  <head>
+    <style>
+html, body{
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  border: 0;
+  overflow: hidden; /*  Disable scrollbars */
+  display: block;  /* No floating content on sides */
+}
+    </style>
+
+  </head>
+  <body>
+    <script id="fragment" type="notjs">
+      precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+
+    #define MAXDIST 100.
+    #define MINSTEP .001
+    #define MAXSTEPS 100
+    #define HITRATIO .01
+    #define EPSILON .0001
+
+    float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
+        return distance(rayPos,spherePos)-r;
+    }
+    float distToClosest(in vec3 pos, out vec3 col){
+        col = vec3(0.);
+        float dist = MAXDIST;
+        float sphereDist = sphereSDF(pos,1.,vec3(0.,0.,0.));
+        if(sphereDist < dist){
+            dist = sphereDist;
+            col = vec3(1.,0.,0.);
+            return dist;
+        }
+
+    }
+    vec3 getNormal(vec3 position){
+        const vec2 k = vec2(1.0, -1.0);
+        vec3 col = vec3(0.);
+        return normalize(
+        k.xyy * distToClosest(position + k.xyy * EPSILON, col) +
+        k.yyx * distToClosest(position + k.yyx * EPSILON, col) +
+        k.yxy * distToClosest(position + k.yxy * EPSILON, col) +
+        k.xxx * distToClosest(position + k.xxx * EPSILON, col)
+        );
+    }
+
+    bool intersect(in vec3 o, in vec3 rd, out vec3 pos, out vec3 normal, out vec3 col){
+        pos = o;
+        float stpLen = 0.;
+        float distTravelled = 0.;
+        col = vec3(0.);
+        normal = vec3(0.);
+        for(int steps = 0; steps<MAXSTEPS; steps++){
+            stpLen = distToClosest(pos, col);
+            if(stpLen<MINSTEP) stpLen=MINSTEP;
+            pos += stpLen*rd;
+            distTravelled += stpLen;
+            if(abs(stpLen) < HITRATIO * distance(o,pos)){
+                normal = getNormal(pos);
+                return true;
+            }
+            if(distTravelled > MAXDIST || steps+1 == MAXSTEPS){
+                col = vec3(float(steps)/float(MAXSTEPS));
+                return false;
+            }
+        }
+            return false;
+    }
+
+    vec3 phong(vec3 p, vec3 rd, vec3 col, vec3 n, vec3 lamp_pos){
+      vec3 ld = normalize(lamp_pos-p);
+      vec3 amb = .1*col;
+      vec3 diff = max(dot(n,ld),0.)*col;
+      vec3 spec = pow(max(dot(rd, reflect(ld,n)),0.),32.)*col;
+      vec3 sum = amb+diff+spec;
+      return sum;
+    }
+
+    vec4 shoot(in vec3 o, in vec3 rd){
+        vec3 col = vec3(0.);
+        vec3 n = vec3(0.);
+        vec3 p = o;
+        bool hit = intersect(o,rd, p ,n,col);
+        if(hit){
+            col = phong(p, rd, col,n, vec3(0.,2.,0.));
+        }
+        return vec4(col,1.);
+
+    }
+    vec3 ray_dir(vec2 uv, vec3 origin, vec3 target){
+      vec3 forward = normalize(target-origin);
+        vec3 right = normalize(cross(vec3(0.,1.,0.),forward));
+        vec3 up = normalize(cross(forward, right));
+
+        float near = 1.;
+        vec3 ray_direction = normalize(uv.x*right+uv.y*up+forward*near);
+        return ray_direction;
+    }
+    vec4 gamma_correction(vec4 col, float gamma){
+        col.x = pow(col.x,gamma);
+        col.y = pow(col.y,gamma);
+        col.z = pow(col.z,gamma);
+        return col;
+    }
+    vec4 raymarching(){
+        vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.0;
+        float aspect = u_resolution.x/u_resolution.y;
+        uv.x = uv.x*aspect;
+        vec3 o = vec3(1.,1.,20.);
+        vec3 t = vec3(0.);
+        vec3 rd = ray_dir(uv, o, t);
+        return shoot(o,rd);
+    }
+    void main(){
+        gl_FragColor = gamma_correction(raymarching(), .5);
+    }
+    </script>
+            <canvas id="glCanvas" style="position:absolute; height:100%;
+                        width:100%; overflow:hidden; left:0px; top:0px;"></canvas>
+            <script src="program.js" type="text/javascript"></script>
+  </body>

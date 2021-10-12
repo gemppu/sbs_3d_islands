@@ -1,19 +1,3 @@
-<html>
-  <head>
-    <style>
-html, body{
-  width: 100%;
-  height: 100%;
-  margin: 0px;
-  border: 0;
-  overflow: hidden; /*  Disable scrollbars */
-  display: block;  /* No floating content on sides */
-}
-    </style>
-
-  </head>
-  <body>
-    <script id="fragment" type="notjs">
 precision mediump float;
 uniform float u_time;
 uniform vec2 u_resolution;
@@ -183,8 +167,3 @@ vec4 raymarching(){
 void main(){
   gl_FragColor = gamma_correction(raymarching(), .5);
 }
-    </script>
-            <canvas id="glCanvas" style="position:absolute; height:100%;
-                        width:100%; overflow:hidden; left:0px; top:0px;"></canvas>
-            <script src="program.js" type="text/javascript"></script>
-  </body>
