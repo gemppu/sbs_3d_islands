@@ -7,6 +7,7 @@ uniform vec2 u_resolution;
 #define MAXSTEPS 100
 #define HITRATIO .001
 #define EPSILON .0001
+#define VIEWDISTANCE 10.
 #define SHARDNESS 32.
 
 float floorSDF(vec3 p, float h){
@@ -126,7 +127,7 @@ vec3 phong(vec3 p, vec3 o, vec3 rd, vec3 col, vec3 n, vec3 lamp_pos, float lamp_
   vec3 diff = max(dot(n,ld),0.)*col;
   vec3 spec = pow(max(dot(rd, reflect(ld,n)),0.),32.)*col;
   float dm = lamp_str/pow((length(o-p)+length(p-lamp_pos)),2.);//distance multiplier
-  float s = shadow(p,lamp_pos);
+  float s = 1.;//shadow(p,lamp_pos);
   vec3 sum = s*dm*(amb+diff+spec);
   return sum;
 }
@@ -140,6 +141,9 @@ vec4 shoot(in vec3 o, in vec3 rd){
     col = phong(p, o, rd, col,n, vec3(cos(u_time),3., sin(u_time)),100.);
     //col = mix(col, vec3(0.),length(o-p)/20.);//clamp(sqrt(length(o-p))*.01,0.,1.));
   }
+  float distance_normalized = clamp(length(o-p)/ VIEWDISTANCE, 0., 1.);
+  vec3 bgCol = vec3(0.1);
+  col = mix(col, bgCol, distance_normalized);
   return vec4(col,1.);
 
 }
