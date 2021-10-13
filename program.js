@@ -111,7 +111,8 @@ function draw(){
 	
   gl.uniform2fv(u_resolution,[canvas.width, canvas.height]);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  window.requestAnimationFrame(draw);
+
+  //window.requestAnimationFrame(draw);
 }
   window.requestAnimationFrame(draw);
   start = new Date();

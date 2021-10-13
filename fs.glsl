@@ -7,6 +7,7 @@ uniform vec2 u_resolution;
 #define MAXSTEPS 100
 #define HITRATIO .001
 #define EPSILON .0001
+#define SHARDNESS 32.
 
 float floorSDF(vec3 p, float h){
   return abs(p.y-h);
@@ -16,6 +17,7 @@ float sdRoundBox(vec3 p, vec3 b, float r){
   vec3 q = abs(p)-b;
   return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0)-r;
 }
+
 
 float sdCylinder(vec3 p, vec3 c){
   return length(p.xz-c.xy)-c.z;
@@ -97,6 +99,8 @@ bool intersect(in vec3 o, in vec3 rd, out vec3 pos, out vec3 normal, out vec3 co
 }
 
 float shadow(vec3 o, vec3 lamp_pos){
+  float res = 1.0;
+  float ph = 1e20;
   vec3 p = o;
   vec3 ld = normalize(lamp_pos-p); // light direction
   float dt = 0.; // distance travelled
@@ -105,16 +109,15 @@ float shadow(vec3 o, vec3 lamp_pos){
   vec3 col = vec3(0.);
   for(int steps=0; steps<MAXSTEPS; steps++){
     sl = distToClosest(p,col);
-    if(sl<MINSTEP) sl=MINSTEP;
-    if(length(p-lamp_pos)<sl) return 1.;
+    if(sl<MINSTEP && steps == 0) sl=MINSTEP;
+    if(sl<HITRATIO) return 0.1;
+    float y = sl*sl/(2.0*ph);
+    float d = sqrt(sl*sl-y*y);
+    res = min(res, SHARDNESS*d/max(0.0, dt-y));
     p += ld*sl;
     dt += sl;
-    if(abs(sl)<HITRATIO*distance(o,p)){
-      return 0.;
-    }
-    if(sl<c) sl=c;
   }
-  return 1.;
+  return res;
 }
 
 vec3 phong(vec3 p, vec3 o, vec3 rd, vec3 col, vec3 n, vec3 lamp_pos, float lamp_str){
