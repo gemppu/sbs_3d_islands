@@ -2,12 +2,12 @@ precision mediump float;
 uniform float u_time;
 uniform vec2 u_resolution;
 
-#define MAXDIST 30.
+#define MAXDIST 100.
 #define MINSTEP .001
 #define MAXSTEPS 100
 #define HITRATIO .001
 #define EPSILON .0001
-#define VIEWDISTANCE 10.
+#define VIEWDISTANCE 50.
 #define SHARDNESS 32.
 
 float floorSDF(vec3 p, float h){
@@ -138,8 +138,7 @@ vec4 shoot(in vec3 o, in vec3 rd){
   vec3 p = o;
   bool hit = intersect(o,rd, p ,n,col);
   if(hit){
-    col = phong(p, o, rd, col,n, vec3(cos(u_time),3., sin(u_time)),100.);
-    //col = mix(col, vec3(0.),length(o-p)/20.);//clamp(sqrt(length(o-p))*.01,0.,1.));
+    //col = phong(p, o, rd, col,n, vec3(cos(u_time),3., sin(u_time)),100.);
   }
   float distance_normalized = clamp(length(o-p)/ VIEWDISTANCE, 0., 1.);
   vec3 bgCol = vec3(0.1);
@@ -163,10 +162,15 @@ vec4 gamma_correction(vec4 col, float gamma){
   return col;
 }
 vec4 raymarching(){
-  vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.0;
-  float aspect = u_resolution.x/u_resolution.y;
-  uv.x = uv.x*aspect;
-  vec3 o = vec3(sin(u_time), 4.,8.);
+  if(gl_FragCoord.x<u_resolution.x/2.){
+    vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.0;
+    float aspect = u_resolution.x/u_resolution.y;
+    uv.x = uv.x*aspect/2.;
+    vec3 o = vec3(sin(u_time), 4.,8.);
+  }else{
+
+  }
+
   vec3 t = vec3(0.);
   vec3 rd = ray_dir(uv, o, t);
   return shoot(o,rd);
