@@ -165,23 +165,25 @@ vec4 raymarching(){
   vec4 col = vec4(.0);
   
   if(gl_FragCoord.x<u_resolution.x/2.){
-    vec2 uv = (gl_FragCoord.xy/u_resolution*2.)*2.0-1.0;
+    //vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.0;
+    vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-vec2(.5,1.);
     float aspect = (u_resolution.x)/u_resolution.y;
-    uv.x = uv.x*aspect;
+    uv.x = uv.x*aspect/2.;
     vec3 o = vec3(sin(u_time), 4.,8.);
     vec3 t = vec3(0.);
     vec3 rd = ray_dir(uv, o, t);
     col = shoot(o,rd);
     //col = vec4(uv,0.,1.);
   }else{
-    vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.0;
+    vec2 modCoord = vec2(mod(gl_FragCoord.x,u_resolution.x/2.),gl_FragCoord.y);
+    vec2 uv = (modCoord/u_resolution)*2.0-vec2(.5,1.);
     float aspect = u_resolution.x/u_resolution.y;
     uv.x = uv.x*aspect/2.;
     vec3 o = vec3(sin(u_time), 4.,8.);
     vec3 t = vec3(0.);
     vec3 rd = ray_dir(uv, o, t);
     col = shoot(o,rd);
-    col = vec4(uv,0.,1.);
+    //col = vec4(uv,0.,1.);
   }
   return col;
 }
