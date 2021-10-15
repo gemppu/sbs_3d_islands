@@ -9,6 +9,7 @@ uniform vec2 u_resolution;
 #define EPSILON .0001
 #define VIEWDISTANCE 50.
 #define SHARDNESS 32.
+#define EYEWIDTH = .1
 
 float floorSDF(vec3 p, float h){
   return abs(p.y-h);
@@ -46,7 +47,8 @@ float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
 float distToClosest(in vec3 pos, out vec3 col){
   col = vec3(0.);
   float dist = MAXDIST;
-  float sphereDist = sphereSDF(pos,1.,vec3(0.,0.,0.));
+  vec3 sphereLoc = vec3(0., 3., 5.*sin(u_time)-11.);
+  float sphereDist = sphereSDF(pos,.5,sphereLoc);
   if(sphereDist < dist){
     dist = sphereDist;
     col = vec3(1.,0.,0.);
@@ -137,8 +139,9 @@ vec4 shoot(in vec3 o, in vec3 rd){
   vec3 n = vec3(0.);
   vec3 p = o;
   bool hit = intersect(o,rd, p ,n,col);
+  vec3 lamp_pos = vec3(0., 3., 5.*sin(u_time)-10.);
   if(hit){
-    //col = phong(p, o, rd, col,n, vec3(cos(u_time),3., sin(u_time)),100.);
+    col = phong(p, o, rd, col,n, lamp_pos,100.);
   }
   float distance_normalized = clamp(length(o-p)/ VIEWDISTANCE, 0., 1.);
   vec3 bgCol = vec3(0.1);
@@ -169,8 +172,10 @@ vec4 raymarching(){
     vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-vec2(.5,1.);
     float aspect = (u_resolution.x)/u_resolution.y;
     uv.x = uv.x*aspect/2.;
-    vec3 o = vec3(sin(u_time), 4.,8.);
-    vec3 t = vec3(0.);
+    //vec3 o = vec3(sin(u_time), 4.,8.);
+    vec3 o = vec3(0.,4.,8.);
+    //vec3 t = vec3(0.);
+    vec3 t = vec3(0.,0.,-20.);
     vec3 rd = ray_dir(uv, o, t);
     col = shoot(o,rd);
     //col = vec4(uv,0.,1.);
@@ -179,8 +184,9 @@ vec4 raymarching(){
     vec2 uv = (modCoord/u_resolution)*2.0-vec2(.5,1.);
     float aspect = u_resolution.x/u_resolution.y;
     uv.x = uv.x*aspect/2.;
-    vec3 o = vec3(sin(u_time), 4.,8.);
-    vec3 t = vec3(0.);
+    //vec3 o = vec3(sin(u_time), 4.,8.);
+    vec3 o = vec3(.1,4.,8.);
+    vec3 t = vec3(0.,0.,-20.);
     vec3 rd = ray_dir(uv, o, t);
     col = shoot(o,rd);
     //col = vec4(uv,0.,1.);
