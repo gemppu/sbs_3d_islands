@@ -25,6 +25,7 @@ function createShader (gl, sourceCode, type) {
   return shader;
 }
 
+
   var vertexShaderSource =
   'attribute vec4 position;\n' +
   'void main() {\n' +
@@ -80,6 +81,8 @@ function createShader (gl, sourceCode, type) {
   gl.bufferData(gl.ARRAY_BUFFER,
                 new Float32Array(positions),
                 gl.STATIC_DRAW);
+
+  // Create texure
 
   var u_resolution = gl.getUniformLocation(program,"u_resolution");
   var u_time = gl.getUniformLocation(program,"u_time");
