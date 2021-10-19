@@ -78,6 +78,7 @@ float distToClosest(in vec3 pos, out vec3 col){
   if(holviDist < dist){
     dist = holviDist;
     col = vec3(.6);
+    col = mix(vec3(.2),vec3(.6),pos.y);
   }
 
   return dist;
