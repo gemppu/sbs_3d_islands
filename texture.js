@@ -1,4 +1,4 @@
-class Texture{
+let Texture = class{
   constructor(h, w, gl){
     this.h = h;
     this.w = w;
