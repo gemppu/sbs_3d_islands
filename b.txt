@@ -3,5 +3,6 @@
                         width:100%; overflow:hidden; left:0px; top:0px;"></canvas>
             <script src="program.js" type="text/javascript"></script>
             <script src="texture.js" type="text/javascript"></script>
+            <script src="shader.js" type="text/javascript"></script>
 
   </body>

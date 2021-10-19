@@ -16,7 +16,7 @@ function createShader (gl, sourceCode, type) {
   // Compiles either a shader of type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
   var shader = gl.createShader( type );
   gl.shaderSource( shader, sourceCode );
-  gl.compileShader( shader );
+  gl.compileShader( shader );type
 
   if ( !gl.getShaderParameter(shader, gl.COMPILE_STATUS) ) {
     var info = gl.getShaderInfoLog( shader );
