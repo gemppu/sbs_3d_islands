@@ -50,6 +50,15 @@ window.onload = function init() {
   gl.bufferData(gl.ARRAY_BUFFER,
                 new Float32Array(positions),
                 gl.STATIC_DRAW);
+
+  //rb0 = gl.createRenderbuffer();
+  //gl.bindRenderbuffer(gl.RENDERBUFFER, rb0);
+
+  cloudTexture = new Texture(1024, 1024, gl);
+  cloudTexture.render();
+
+  
+
   function draw(){
     //resize canvas
     
@@ -67,12 +76,15 @@ window.onload = function init() {
     newtime = new Date();
     timems = newtime.getTime() - start.getTime();
     time = timems/1000.;
+
     shader1.setUniform1f("u_time", time);
-    shader1.setUniform2f("u_resolution", [canvas.width, canvas.height]);
+    shader1.setUniform2f("u_resolution", canvas.width, canvas.height);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
   window.requestAnimationFrame(draw);
   start = new Date();
+  gl.clearColor(.1,.1,1.,1.);
+  gl.clearDepth(1.);
 }
   
 

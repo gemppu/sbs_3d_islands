@@ -1,16 +1,17 @@
 <html>
   <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
     <style>
-html, body{
-  width: 100%;
-  height: 100%;
-  margin: 0px;
-  border: 0;
-  overflow: hidden; /*  Disable scrollbars */
-  display: block;  /* No floating content on sides */
-}
+    html, body{
+      width: 100%;
+      height: 100%;
+      margin: 0px;
+      border: 0;
+      overflow: hidden; /*  Disable scrollbars */
+      display: block;  /* No floating content on sides */
+    }
     </style>
-
   </head>
   <body>
     <script id="fragment" type="notjs">

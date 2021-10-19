@@ -1,199 +1,228 @@
 precision mediump float;
+
 uniform float u_time;
-uniform vec2 u_resolution;
+uniform vec2 u_resolution; 
 
-#define MAXDIST 100.
-#define MINSTEP .001
-#define MAXSTEPS 100
-#define HITRATIO .001
-#define EPSILON .0001
-#define VIEWDISTANCE 50.
-#define SHARDNESS 32.
-#define EYEWIDTH = .1
+//
+#define PI 3.14159265359
+#define EPSILON 0.00001
 
-float floorSDF(vec3 p, float h){
-  return abs(p.y-h);
+
+//  https://gist.github.com/patriciogonzalezvivo/670c22f3966e662d2f83
+//	Simplex 3D Noise
+//	by Ian McEwan, Ashima Arts
+//
+vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
+
+float snoise(vec3 v){
+    const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
+    const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
+
+    // First corner
+    vec3 i  = floor(v + dot(v, C.yyy) );
+    vec3 x0 =   v - i + dot(i, C.xxx) ;
+
+    // Other corners
+    vec3 g = step(x0.yzx, x0.xyz);
+    vec3 l = 1.0 - g;
+    vec3 i1 = min( g.xyz, l.zxy );
+    vec3 i2 = max( g.xyz, l.zxy );
+
+    //  x0 = x0 - 0. + 0.0 * C
+    vec3 x1 = x0 - i1 + 1.0 * C.xxx;
+    vec3 x2 = x0 - i2 + 2.0 * C.xxx;
+    vec3 x3 = x0 - 1. + 3.0 * C.xxx;
+
+    // Permutations
+    i = mod(i, 289.0 );
+    vec4 p = permute( permute( permute(
+    i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
+    + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
+    + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+
+    // Gradients
+    // ( N*N points uniformly over a square, mapped onto an octahedron.)
+    float n_ = 1.0/7.0; // N=7
+    vec3  ns = n_ * D.wyz - D.xzx;
+
+    vec4 j = p - 49.0 * floor(p * ns.z *ns.z);  //  mod(p,N*N)
+
+    vec4 x_ = floor(j * ns.z);
+    vec4 y_ = floor(j - 7.0 * x_ );    // mod(j,N)
+
+    vec4 x = x_ *ns.x + ns.yyyy;
+    vec4 y = y_ *ns.x + ns.yyyy;
+    vec4 h = 1.0 - abs(x) - abs(y);
+
+    vec4 b0 = vec4( x.xy, y.xy );
+    vec4 b1 = vec4( x.zw, y.zw );
+
+    vec4 s0 = floor(b0)*2.0 + 1.0;
+    vec4 s1 = floor(b1)*2.0 + 1.0;
+    vec4 sh = -step(h, vec4(0.0));
+
+    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
+    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+
+    vec3 p0 = vec3(a0.xy,h.x);
+    vec3 p1 = vec3(a0.zw,h.y);
+    vec3 p2 = vec3(a1.xy,h.z);
+    vec3 p3 = vec3(a1.zw,h.w);
+
+    //Normalise gradients
+    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+    p0 *= norm.x;
+    p1 *= norm.y;
+    p2 *= norm.z;
+    p3 *= norm.w;
+
+    // Mix final noise value
+    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+    m = m * m;
+    return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1),
+    dot(p2,x2), dot(p3,x3) ) );
 }
 
-float sdRoundBox(vec3 p, vec3 b, float r){
-  vec3 q = abs(p)-b;
-  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0)-r;
+float safe_snoise(vec3 p)
+{
+    float f = snoise(p);
+    if (isinf(f))
+    return 0.0;
+    return f;
 }
 
+// https://github.com/blender/blender/blob/master/intern/cycles/kernel/shaders/node_noise.h
 
-float sdCylinder(vec3 p, vec3 c){
-  return length(p.xz-c.xy)-c.z;
-}
-
-float holviSDF(vec3 p){
-  p.x = mod(p.x+2.,4.)-2.;
-  p.z = mod(p.z+2.,4.)-2.;
-  float h = 4.;
-  float r = 1.8;
-  float boxDist = sdRoundBox(p,vec3(2.,h+r+.1,2.),0.);
-  float cylxDist = length(p.xy -vec2(.0,h))-r;
-  float cylzDist = length(p.zy-vec2(.0,h))-r;
-  float cylDist = min(cylxDist, cylzDist);
-  float boxxDist = sdRoundBox(p, vec3(2.5,h,r),0.);
-  float boxzDist = sdRoundBox(p, vec3(r,h,2.5),0.);
-  float box1Dist = min(boxxDist, boxzDist);
-  float cutDist = min(box1Dist, cylDist);
-  float dist = max(boxDist, -cutDist);
-  return dist;
-}
-float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
-  return distance(rayPos,spherePos)-r;
-}
-float distToClosest(in vec3 pos, out vec3 col){
-  col = vec3(0.);
-  float dist = MAXDIST;
-  vec3 sphereLoc = vec3(0., 3., 5.*sin(u_time)-11.);
-  float sphereDist = sphereSDF(pos,.5,sphereLoc);
-  if(sphereDist < dist){
-    dist = sphereDist;
-    col = vec3(1.,0.,0.);
-  }
-  float floorDist = floorSDF(pos,0.);
-  if(floorDist < dist){
-    dist = floorDist;
-    col = vec3(.2);
-  }
-  float holviDist = holviSDF(pos);
-  if(holviDist < dist){
-    dist = holviDist;
-    col = vec3(.6);
-    col = mix(vec3(.2),vec3(.6),pos.y);
-  }
-
-  return dist;
-
-}
-vec3 getNormal(vec3 position){
-  const vec2 k = vec2(1.0, -1.0);
-  vec3 col = vec3(0.);
-  return normalize(
-      k.xyy * distToClosest(position + k.xyy * EPSILON, col) +
-      k.yyx * distToClosest(position + k.yyx * EPSILON, col) +
-      k.yxy * distToClosest(position + k.yxy * EPSILON, col) +
-      k.xxx * distToClosest(position + k.xxx * EPSILON, col)
-      );
-}
-
-bool intersect(in vec3 o, in vec3 rd, out vec3 pos, out vec3 normal, out vec3 col){
-  pos = o;
-  float stpLen = 0.;
-  float distTravelled = 0.;
-  col = vec3(0.);
-  normal = vec3(0.);
-  for(int steps = 0; steps<MAXSTEPS; steps++){
-    stpLen = distToClosest(pos, col);
-    if(stpLen<MINSTEP) stpLen=MINSTEP;
-    pos += stpLen*rd;
-    distTravelled += stpLen;
-    if(abs(stpLen) < HITRATIO * distance(o,pos)){
-      normal = getNormal(pos);
-      return true;
+float fractal_noise(vec3 p, float details, float roughness)
+{
+    float fscale = 1.0;
+    float amp = 1.0;
+    float maxamp = 0.0;
+    float sum = 0.0;
+    float octaves = clamp(details, 0.0, 16.0);
+    int n = int(octaves);
+    for (int i = 0; i <= n; i++) {
+        float t = safe_snoise(fscale * p);
+        sum += t * amp;
+        maxamp += amp;
+        amp *= clamp(roughness, 0.0, 1.0);
+        fscale *= 2.0;
     }
-    if(distTravelled > MAXDIST || steps+1 == MAXSTEPS){
-      col = vec3(0.);
-      return false;
+    float rmd = octaves - floor(octaves);
+    if (rmd != 0.0) {
+        float t = safe_snoise(fscale * p);
+        float sum2 = sum + t * amp;
+        sum /= maxamp;
+        sum2 /= maxamp + amp;
+        return (1.0 - rmd) * sum + rmd * sum2;
     }
-  }
-  return false;
+    else {
+        return sum / maxamp;
+    }
 }
 
-float shadow(vec3 o, vec3 lamp_pos){
-  float res = 1.0;
-  float ph = 1e20;
-  vec3 p = o;
-  vec3 ld = normalize(lamp_pos-p); // light direction
-  float dt = 0.; // distance travelled
-  float sl = 0.; // step length
-  float c = MAXDIST; //closest dist
-  vec3 col = vec3(0.);
-  for(int steps=0; steps<MAXSTEPS; steps++){
-    sl = distToClosest(p,col);
-    if(sl<MINSTEP && steps == 0) sl=MINSTEP;
-    if(sl<HITRATIO) return 0.1;
-    float y = sl*sl/(2.0*ph);
-    float d = sqrt(sl*sl-y*y);
-    res = min(res, SHARDNESS*d/max(0.0, dt-y));
-    p += ld*sl;
-    dt += sl;
-  }
-  return res;
+// https://github.com/blender/blender/blob/master/intern/cycles/kernel/shaders/node_noise_texture.osl
+vec3 random_vec3_offset(float seed)
+{
+    return vec3(100.0 + snoise(vec3(seed)) * 100.0,
+    100.0 + snoise(vec3(seed)) * 100.0,
+    100.0 + snoise(vec3(seed)) * 100.0);
 }
 
-vec3 phong(vec3 p, vec3 o, vec3 rd, vec3 col, vec3 n, vec3 lamp_pos, float lamp_str){
-  vec3 ld = normalize(lamp_pos-p);
-  vec3 amb = .1*col;
-  vec3 diff = max(dot(n,ld),0.)*col;
-  vec3 spec = pow(max(dot(rd, reflect(ld,n)),0.),32.)*col;
-  float dm = lamp_str/pow((length(o-p)+length(p-lamp_pos)),2.);//distance multiplier
-  float s = 1.;//shadow(p,lamp_pos);
-  vec3 sum = s*dm*(amb+diff+spec);
-  return sum;
+vec3 noiseTexture(vec3 pos, float detail, float roughness){
+    vec3 p = pos;
+    float value = fractal_noise(p, detail, roughness);
+
+    return (vec3(value,
+    fractal_noise(p+random_vec3_offset(0.), detail, roughness),
+    fractal_noise(p+random_vec3_offset(1.), detail, roughness)));
 }
 
-vec4 shoot(in vec3 o, in vec3 rd){
-  vec3 col = vec3(0.);
-  vec3 n = vec3(0.);
-  vec3 p = o;
-  bool hit = intersect(o,rd, p ,n,col);
-  vec3 lamp_pos = vec3(0., 3., 5.*sin(u_time)-10.);
-  if(hit){
-    col = phong(p, o, rd, col,n, lamp_pos,100.);
-  }
-  float distance_normalized = clamp(length(o-p)/ VIEWDISTANCE, 0., 1.);
-  vec3 bgCol = vec3(0.1);
-  col = mix(col, bgCol, distance_normalized);
-  return vec4(col,1.);
+vec3 noiseTextureChain(vec3 p){
+    // Normalized pixel coordinates (from 0 to 1)
+    vec2 uv = gl_FragCoord.xy/u_resolution.xy;
+    uv *= 2.;
+    float detail1 = 8.;
+    float detail2 = 1.;
+    float roughness1 = .5;
+    float roughness2 = .5;
+    vec3 pIn1 = vec3(p);
+    vec3 pIn2 = noiseTexture(pIn1,detail1,roughness1);
+    vec3 col = noiseTexture(pIn2,detail2,roughness2);
+    // contrast
+    col *= .7;
+    // brightness
+    col += .5;
+    return col;
+}
 
+float hash1( float n )
+{
+    return fract( n*17.0*fract( n*0.3183099 ) );
 }
-vec3 ray_dir(vec2 uv, vec3 origin, vec3 target){
-  vec3 forward = normalize(target-origin);
-  vec3 right = normalize(cross(vec3(0.,1.,0.),forward));
-  vec3 up = normalize(cross(forward, right));
 
-  float near = 1.;
-  vec3 ray_direction = normalize(uv.x*right+uv.y*up+forward*near);
-  return ray_direction;
+float noise(vec3 x){
+    vec3 p = floor(x);
+    vec3 w = fract(x);
+    vec3 u = w*w*(3.0-2.0*w);
+
+    float n = p.x + 317.0*p.y + 157.0*p.z;
+    
+    float a = hash1(n+0.0);
+    float b = hash1(n+1.0);
+    float c = hash1(n+317.0);
+    float d = hash1(n+318.0);
+    float e = hash1(n+157.0);
+	float f = hash1(n+158.0);
+    float g = hash1(n+474.0);
+    float h = hash1(n+475.0);
+
+    float k0 =   a;
+    float k1 =   b - a;
+    float k2 =   c - a;
+    float k3 =   e - a;
+    float k4 =   a - b - c + d;
+    float k5 =   a - c - e + g;
+    float k6 =   a - b - e + f;
+    float k7 = - a + b + c - d + e - f - g + h;
+
+    return -1.0+2.0*(k0 + k1*u.x + k2*u.y + k3*u.z + k4*u.x*u.y + k5*u.y*u.z + k6*u.z*u.x + k7*u.x*u.y*u.z);
 }
-vec4 gamma_correction(vec4 col, float gamma){
-  col.x = pow(col.x,gamma);
-  col.y = pow(col.y,gamma);
-  col.z = pow(col.z,gamma);
-  return col;
+
+float fbm(vec3 x, float H){
+    float G = exp2(-H);
+    float t = .0;
+    float f = 1.;
+    float a = 1.;
+    for( int i = 0; i<6; i++){
+        t += a * noise(f * x);
+        f *= 2.;
+        a *= G;
+    }
+    return t;
 }
-vec4 raymarching(){
-  vec4 col = vec4(.0);
-  
-  if(gl_FragCoord.x<u_resolution.x/2.){
-    //vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.0;
-    vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-vec2(.5,1.);
-    float aspect = (u_resolution.x)/u_resolution.y;
-    uv.x = uv.x*aspect/2.;
-    //vec3 o = vec3(sin(u_time), 4.,8.);
-    vec3 o = vec3(0.,4.,8.);
-    //vec3 t = vec3(0.);
-    vec3 t = vec3(0.,0.,-20.);
-    vec3 rd = ray_dir(uv, o, t);
-    col = shoot(o,rd);
-    //col = vec4(uv,0.,1.);
-  }else{
-    vec2 modCoord = vec2(mod(gl_FragCoord.x,u_resolution.x/2.),gl_FragCoord.y);
-    vec2 uv = (modCoord/u_resolution)*2.0-vec2(.5,1.);
-    float aspect = u_resolution.x/u_resolution.y;
-    uv.x = uv.x*aspect/2.;
-    //vec3 o = vec3(sin(u_time), 4.,8.);
-    vec3 o = vec3(.1,4.,8.);
-    vec3 t = vec3(0.,0.,-20.);
-    vec3 rd = ray_dir(uv, o, t);
-    col = shoot(o,rd);
-    //col = vec4(uv,0.,1.);
-  }
-  return col;
-}
-void main(){
-  gl_FragColor = gamma_correction(raymarching(), .5);
+
+void main()
+{
+    vec2 uv = gl_FragCoord.xy/u_resolution.xy;
+    uv *= 1.;
+    float time = u_time/10;
+    vec3 p = vec3(uv.x*.5*(sin(u_time*0)*sin(uv.x)*.5+2), uv.y+time*0, time*0.1);
+    float detail1 = 8.;
+    float detail2 = 1.;
+    float roughness1 = .5;
+    float roughness2 = .2;
+    float f1 = fractal_noise(p,detail1,roughness1);
+    vec3 pIn1 = p;
+    vec3 pIn2 = noiseTexture(pIn1,detail1,roughness1);
+    vec3 pIn3 = noiseTexture(pIn2,detail2,roughness2);
+    vec3 col = noiseTexture(pIn3,detail2,roughness2);
+    // contrast
+    col *= .7;
+    // brightness
+    col += .5;
+    //col = vec3(snoise(p));
+    gl_FragColor = vec4(vec3((f1+1)*.5),1.);
+    
 }
