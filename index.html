@@ -104,7 +104,7 @@ float snoise(vec3 v){
 float safe_snoise(vec3 p)
 {
     float f = snoise(p);
-    if (isinf(f))
+    if (f>999999999.)
     return 0.0;
     return f;
 }
@@ -119,7 +119,8 @@ float fractal_noise(vec3 p, float details, float roughness)
     float sum = 0.0;
     float octaves = clamp(details, 0.0, 16.0);
     int n = int(octaves);
-    for (int i = 0; i <= n; i++) {
+    for (int i = 0; i <= 999; i++) {
+        if(i>=n) break;
         float t = safe_snoise(fscale * p);
         sum += t * amp;
         maxamp += amp;
@@ -224,8 +225,8 @@ void main()
 {
     vec2 uv = gl_FragCoord.xy/u_resolution.xy;
     uv *= 1.;
-    float time = u_time/10;
-    vec3 p = vec3(uv.x*.5*(sin(u_time*0)*sin(uv.x)*.5+2), uv.y+time*0, time*0.1);
+    float time = u_time/10.;
+    vec3 p = vec3(uv.x, uv.y+time*.01, time*0.4);
     float detail1 = 8.;
     float detail2 = 1.;
     float roughness1 = .5;
@@ -240,7 +241,7 @@ void main()
     // brightness
     col += .5;
     //col = vec3(snoise(p));
-    gl_FragColor = vec4(vec3((f1+1)*.5),1.);
+    gl_FragColor = vec4(vec3((f1+1.)*.5),1.);
     
 }
     </script>

@@ -2,7 +2,7 @@
 window.onload = function init() {
   const canvas = document.querySelector("#glCanvas");
   canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight
+  canvas.height = window.innerHeight;
   // Initialize the GL context
   const gl = canvas.getContext("webgl");
 
@@ -80,6 +80,7 @@ window.onload = function init() {
     shader1.setUniform1f("u_time", time);
     shader1.setUniform2f("u_resolution", canvas.width, canvas.height);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    window.requestAnimationFrame(draw);
   }
   window.requestAnimationFrame(draw);
   start = new Date();
