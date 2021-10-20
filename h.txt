@@ -14,4 +14,3 @@
     </style>
   </head>
   <body>
-    <script id="fragment" type="notjs">

@@ -19,8 +19,10 @@ window.onload = function init() {
   '}\n';
 
   var fragmentShaderSource = document.getElementById('fragment').innerHTML;
+  var cloudFsSource = document.getElementById('fsCloud').innerHTML;
   
   var shader1 = new Shader(gl, fragmentShaderSource, vertexShaderSource);
+  var cloudShader= new Shader(gl, cloudFsSource, vertexShaderSource);
 
   // Create a buffer for the square's positions.
 
@@ -54,6 +56,7 @@ window.onload = function init() {
   //rb0 = gl.createRenderbuffer();
   //gl.bindRenderbuffer(gl.RENDERBUFFER, rb0);
 
+  cloudShader.use();
   cloudTexture = new Texture(1024, 1024, gl);
   cloudTexture.render();
 
@@ -79,8 +82,9 @@ window.onload = function init() {
 
     shader1.setUniform1f("u_time", time);
     shader1.setUniform2f("u_resolution", canvas.width, canvas.height);
+    shader1.setUniform1i("texture1", cloudTexture.textureID());
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    window.requestAnimationFrame(draw);
+    //window.requestAnimationFrame(draw);
   }
   window.requestAnimationFrame(draw);
   start = new Date();

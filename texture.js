@@ -21,10 +21,10 @@ let Texture = class{
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.rb);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
-  get textureID(){
+  textureID(){
     return this.tex;
   }
-  get resolution(){
+  resolution(){
     return this.h, this.w;
   }
   render(){
