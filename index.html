@@ -260,9 +260,20 @@ uniform sampler2D texture1;
 #define EPSILON .0001
 #define VIEWDISTANCE 50.
 #define SHARDNESS 32.
-#define EYEWIDTH = .1
-#define TEXTURESCALE = 50.
+#define EYEWIDTH .1
+#define TEXTURESCALE 50.
 
+vec4 interpolate_texture(sampler2D smp, vec2 uv){
+  ivec2 res = textureSize(smp);
+  vec2 st = uv*res -.5;
+  vec2 iuv = floor(st);
+  vec2 fuv = frac(st);
+  vec4 a = texture(smp, (iuv+vec2(.5,.5)/res);
+  vec4 b = texture(smp, (iuv+vec2(1.5,.5)/res);
+  vec4 c = texture(smp, (iuv+vec2(.5,1.5)/res);
+  vec4 d = texture(smp, (iuv+vec2(1.5,1.5)/res);
+  return (mix (mix(a,b,fuv.x),mix(c,d,fuv.x),fuv.y);
+  
 float floorSDF(vec3 p, float h){
   return abs(p.y-h);
 }
@@ -298,7 +309,7 @@ float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
 }
 
 float terrainSDF(vec3 p){
-  float h = length(texture2D(texture1, p.xz*.1).xz);
+  float h = length(interpolate_texture(texture1, p.xz*.1).xz);
   return p.y-h*1.;
   return p.y;
 }
