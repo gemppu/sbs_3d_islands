@@ -1,6 +1,7 @@
 precision mediump float;
 uniform float u_time;
 uniform vec2 u_resolution;
+uniform sampler2D texture1;
 
 #define MAXDIST 100.
 #define MINSTEP .001
@@ -10,6 +11,7 @@ uniform vec2 u_resolution;
 #define VIEWDISTANCE 50.
 #define SHARDNESS 32.
 #define EYEWIDTH = .1
+#define TEXTURESCALE = 50.
 
 float floorSDF(vec3 p, float h){
   return abs(p.y-h);
@@ -44,6 +46,24 @@ float holviSDF(vec3 p){
 float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
   return distance(rayPos,spherePos)-r;
 }
+
+float terrainSDF(vec3 p){
+  float h = texture2D(texture1, p,xz*TEXTURESCALE);
+  return p.z-h;
+  
+
+float distToClosest(in vec3 p, out vec3 c){
+  c = vec3(0);
+  float dist = MAXDIST;
+  float terrainDist = terrainSDF(p);
+  if(terrainDist < dist){
+    dist = terrainDist;
+    c = vec3(.5);
+  }
+  return dist;
+}
+
+#if 0
 float distToClosest(in vec3 pos, out vec3 col){
   col = vec3(0.);
   float dist = MAXDIST;
@@ -68,6 +88,8 @@ float distToClosest(in vec3 pos, out vec3 col){
   return dist;
 
 }
+#endif
+
 vec3 getNormal(vec3 position){
   const vec2 k = vec2(1.0, -1.0);
   vec3 col = vec3(0.);

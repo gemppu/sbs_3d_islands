@@ -57,6 +57,8 @@ window.onload = function init() {
   //gl.bindRenderbuffer(gl.RENDERBUFFER, rb0);
 
   cloudShader.use();
+  cloudShader.setUniform1f("u_time", 0.);
+  cloudShader.setUniform2f("u_resolution", canvas.width, canvas.height);
   cloudTexture = new Texture(1024, 1024, gl);
   cloudTexture.render();
 
