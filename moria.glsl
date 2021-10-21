@@ -48,8 +48,10 @@ float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
 }
 
 float terrainSDF(vec3 p){
-  float h = texture2D(texture1, p,xz*TEXTURESCALE);
-  return p.z-h;
+  float h = length(texture2D(texture1, p.xz*.1).xz);
+  return p.y-h*1.;
+  return p.y;
+}
   
 
 float distToClosest(in vec3 p, out vec3 c){
@@ -58,7 +60,9 @@ float distToClosest(in vec3 p, out vec3 c){
   float terrainDist = terrainSDF(p);
   if(terrainDist < dist){
     dist = terrainDist;
-    c = vec3(.5);
+    //c = vec3(.5);
+    c = texture2D(texture1, p.xz*.1).xyz;
+
   }
   return dist;
 }
@@ -199,6 +203,8 @@ vec4 raymarching(){
     vec3 o = vec3(0.,4.,8.);
     //vec3 t = vec3(0.);
     vec3 t = vec3(0.,0.,-20.);
+    o += vec3(1.,0.,0.);
+    t += vec3(1.,0.,0.);
     vec3 rd = ray_dir(uv, o, t);
     col = shoot(o,rd);
     //col = vec4(uv,0.,1.);
@@ -210,6 +216,8 @@ vec4 raymarching(){
     //vec3 o = vec3(sin(u_time), 4.,8.);
     vec3 o = vec3(.1,4.,8.);
     vec3 t = vec3(0.,0.,-20.);
+    o += vec3(1.,0.,0.);
+    t += vec3(1.,0.,0.);
     vec3 rd = ray_dir(uv, o, t);
     col = shoot(o,rd);
     //col = vec4(uv,0.,1.);

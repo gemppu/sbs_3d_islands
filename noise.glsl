@@ -223,6 +223,8 @@ void main()
     col *= .7;
     // brightness
     col += .5;
+    gl_FragColor = vec4(col,1.);
+    return;
     //col = vec3(snoise(p));
     gl_FragColor = vec4(vec3((f1+1.)*.5),1.);
     
