@@ -37,7 +37,7 @@ float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
 
 float terrainSDF(vec3 p){
   float h = length(texture2D(texture1, p.xz/TEXTURESCALE).xz);
-  return p.y-h*2.;
+  return p.y-h*5.;
   return p.y;
 }
   
@@ -139,7 +139,8 @@ vec4 shoot(in vec3 o, in vec3 rd){
   }
   float distance_normalized = clamp(length(o-p)/ VIEWDISTANCE, 0., 1.);
   vec3 bgCol = vec3(0.1);
-  col = mix(col, bgCol, distance_normalized);
+  col = mix(vec3(1.), bgCol, distance_normalized);
+  
   return vec4(col,1.);
 
 }
@@ -163,8 +164,8 @@ vec4 raymarching(){
   
   vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.;
   float aspect = u_resolution.x/u_resolution.y;
-  vec3 o = vec3(5.,4.,8.);
-  vec3 t = vec3(5.,0.,-20.);
+  vec3 o = vec3(5.,15.,8.);
+  vec3 t = vec3(5.,10.,-20.);
   vec3 rd = ray_dir(uv, o, t);
   col = shoot(o,rd);
   return col;
