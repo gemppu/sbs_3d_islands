@@ -59,6 +59,7 @@ window.onload = function init() {
   cloudShader.use();
   cloudShader.setUniform1f("u_time", 0.);
   cloudShader.setUniform2f("u_resolution", canvas.width, canvas.height);
+  cloudTextureSize = 1024;
   cloudTexture = new Texture(1024, 1024, gl);
   cloudTexture.render();
 
@@ -84,6 +85,7 @@ window.onload = function init() {
 
     shader1.setUniform1f("u_time", time);
     shader1.setUniform2f("u_resolution", canvas.width, canvas.height);
+    shader1.setUniform2f("u_tex_resolution", 1024., 1024,);
     shader1.setUniform1i("texture1", cloudTexture.textureID());
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     //window.requestAnimationFrame(draw);

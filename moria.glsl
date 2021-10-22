@@ -2,6 +2,7 @@ precision mediump float;
 uniform float u_time;
 uniform vec2 u_resolution;
 uniform sampler2D texture1;
+uniform vec2 u_tex_resolution;
 
 #define MAXDIST 100.
 #define MINSTEP .001
@@ -14,15 +15,17 @@ uniform sampler2D texture1;
 #define TEXTURESCALE 50.
 
 vec4 interpolate_texture(sampler2D smp, vec2 uv){
-  vec2 res = textureSize(smp);
+  //vec2 res = textureSize(smp);
+  vec2 res = u_tex_resolution;
   vec2 st = uv*res -.5;
   vec2 iuv = floor(st);
-  vec2 fuv = frac(st);
-  vec4 a = texture(smp, (iuv+vec2(.5,.5)/res);
-  vec4 b = texture(smp, (iuv+vec2(1.5,.5)/res);
-  vec4 c = texture(smp, (iuv+vec2(.5,1.5)/res);
-  vec4 d = texture(smp, (iuv+vec2(1.5,1.5)/res);
-  return (mix (mix(a,b,fuv.x),mix(c,d,fuv.x),fuv.y);
+  vec2 fuv = fract(st);
+  vec4 a = texture2D(smp, (iuv+vec2(.5,.5)/res));
+  vec4 b = texture2D(smp, (iuv+vec2(1.5,.5)/res));
+  vec4 c = texture2D(smp, (iuv+vec2(.5,1.5)/res));
+  vec4 d = texture2D(smp, (iuv+vec2(1.5,1.5)/res));
+  return mix(mix(a,b,fuv.x),mix(c,d,fuv.x),fuv.y);
+}
   
 float floorSDF(vec3 p, float h){
   return abs(p.y-h);
@@ -60,7 +63,7 @@ float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
 
 float terrainSDF(vec3 p){
   float h = length(interpolate_texture(texture1, p.xz*.1).xz);
-  return p.y-h*1.;
+  //return p.y-h*2.;
   return p.y;
 }
   
@@ -73,6 +76,7 @@ float distToClosest(in vec3 p, out vec3 c){
     dist = terrainDist;
     //c = vec3(.5);
     c = texture2D(texture1, p.xz*.1).xyz;
+    c = interpolate_texture(texture1, p.xz*.001).xyz;
 
   }
   return dist;
