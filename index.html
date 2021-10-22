@@ -264,19 +264,6 @@ uniform vec2 u_tex_resolution;
 #define EYEWIDTH .1
 #define TEXTURESCALE 50.
 
-vec4 interpolate_texture(sampler2D smp, vec2 uv){
-  //vec2 res = textureSize(smp);
-  vec2 res = u_tex_resolution;
-  res = vec2(1024.);
-  vec2 st = uv*res -.5;
-  vec2 iuv = floor(st);
-  vec2 fuv = fract(st);
-  vec4 a = texture2D(smp, (iuv+vec2(.5,.5)/res));
-  vec4 b = texture2D(smp, (iuv+vec2(1.5,.5)/res));
-  vec4 c = texture2D(smp, (iuv+vec2(.5,1.5)/res));
-  vec4 d = texture2D(smp, (iuv+vec2(1.5,1.5)/res));
-  return mix(mix(a,b,fuv.x),mix(c,d,fuv.x),fuv.y);
-}
   
 float floorSDF(vec3 p, float h){
   return abs(p.y-h);
@@ -288,34 +275,25 @@ float sdRoundBox(vec3 p, vec3 b, float r){
 }
 
 
+
+
 float sdCylinder(vec3 p, vec3 c){
   return length(p.xz-c.xy)-c.z;
 }
 
-float holviSDF(vec3 p){
-  p.x = mod(p.x+2.,4.)-2.;
-  p.z = mod(p.z+2.,4.)-2.;
-  float h = 4.;
-  float r = 1.8;
-  float boxDist = sdRoundBox(p,vec3(2.,h+r+.1,2.),0.);
-  float cylxDist = length(p.xy -vec2(.0,h))-r;
-  float cylzDist = length(p.zy-vec2(.0,h))-r;
-  float cylDist = min(cylxDist, cylzDist);
-  float boxxDist = sdRoundBox(p, vec3(2.5,h,r),0.);
-  float boxzDist = sdRoundBox(p, vec3(r,h,2.5),0.);
-  float box1Dist = min(boxxDist, boxzDist);
-  float cutDist = min(box1Dist, cylDist);
-  float dist = max(boxDist, -cutDist);
-  return dist;
-}
 float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
   return distance(rayPos,spherePos)-r;
 }
 
 float terrainSDF(vec3 p){
-  float h = length(interpolate_texture(texture1, p.xz*.1).xz);
-  //return p.y-h*2.;
+  float h = length(texture2D(texture1, p.xz/TEXTURESCALE).xz);
+  return p.y-h*2.;
   return p.y;
+}
+  
+float cubefieldSFD(vec3 p){
+  
+  return 0.;
 }
   
 
@@ -327,38 +305,11 @@ float distToClosest(in vec3 p, out vec3 c){
     dist = terrainDist;
     //c = vec3(.5);
     c = texture2D(texture1, p.xz*.1).xyz;
-    c = interpolate_texture(texture1, p.xz*.001).xyz;
 
   }
   return dist;
 }
 
-#if 0
-float distToClosest(in vec3 pos, out vec3 col){
-  col = vec3(0.);
-  float dist = MAXDIST;
-  vec3 sphereLoc = vec3(0., 3., 5.*sin(u_time)-11.);
-  float sphereDist = sphereSDF(pos,.5,sphereLoc);
-  if(sphereDist < dist){
-    dist = sphereDist;
-    col = vec3(1.,0.,0.);
-  }
-  float floorDist = floorSDF(pos,0.);
-  if(floorDist < dist){
-    dist = floorDist;
-    col = vec3(.2);
-  }
-  float holviDist = holviSDF(pos);
-  if(holviDist < dist){
-    dist = holviDist;
-    col = vec3(.6);
-    col = mix(vec3(.2),vec3(.6),pos.y);
-  }
-
-  return dist;
-
-}
-#endif
 
 vec3 getNormal(vec3 position){
   const vec2 k = vec2(1.0, -1.0);
@@ -460,34 +411,12 @@ vec4 gamma_correction(vec4 col, float gamma){
 vec4 raymarching(){
   vec4 col = vec4(.0);
   
-  if(gl_FragCoord.x<u_resolution.x/2.){
-    //vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.0;
-    vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-vec2(.5,1.);
-    float aspect = (u_resolution.x)/u_resolution.y;
-    uv.x = uv.x*aspect/2.;
-    //vec3 o = vec3(sin(u_time), 4.,8.);
-    vec3 o = vec3(0.,4.,8.);
-    //vec3 t = vec3(0.);
-    vec3 t = vec3(0.,0.,-20.);
-    o += vec3(1.,0.,0.);
-    t += vec3(1.,0.,0.);
-    vec3 rd = ray_dir(uv, o, t);
-    col = shoot(o,rd);
-    //col = vec4(uv,0.,1.);
-  }else{
-    vec2 modCoord = vec2(mod(gl_FragCoord.x,u_resolution.x/2.),gl_FragCoord.y);
-    vec2 uv = (modCoord/u_resolution)*2.0-vec2(.5,1.);
-    float aspect = u_resolution.x/u_resolution.y;
-    uv.x = uv.x*aspect/2.;
-    //vec3 o = vec3(sin(u_time), 4.,8.);
-    vec3 o = vec3(.1,4.,8.);
-    vec3 t = vec3(0.,0.,-20.);
-    o += vec3(1.,0.,0.);
-    t += vec3(1.,0.,0.);
-    vec3 rd = ray_dir(uv, o, t);
-    col = shoot(o,rd);
-    //col = vec4(uv,0.,1.);
-  }
+  vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.;
+  float aspect = u_resolution.x/u_resolution.y;
+  vec3 o = vec3(5.,4.,8.);
+  vec3 t = vec3(5.,0.,-20.);
+  vec3 rd = ray_dir(uv, o, t);
+  col = shoot(o,rd);
   return col;
 }
 void main(){
