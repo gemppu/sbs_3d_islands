@@ -267,6 +267,7 @@ uniform vec2 u_tex_resolution;
 vec4 interpolate_texture(sampler2D smp, vec2 uv){
   //vec2 res = textureSize(smp);
   vec2 res = u_tex_resolution;
+  res = vec2(1024.);
   vec2 st = uv*res -.5;
   vec2 iuv = floor(st);
   vec2 fuv = fract(st);
