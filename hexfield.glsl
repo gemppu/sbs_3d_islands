@@ -14,6 +14,30 @@ uniform vec2 u_tex_resolution;
 #define EYEWIDTH .1
 #define TEXTURESCALE 50.
 
+
+
+float hash(vec3 p)  // replace this by something better
+{
+    p  = fract( p*0.3183099+.1 );
+	p *= 17.0;
+    return fract( p.x*p.y*p.z*(p.x+p.y+p.z) );
+}
+
+float noise( in vec3 x )
+{
+    vec3 i = floor(x);
+    vec3 f = fract(x);
+    f = f*f*(3.0-2.0*f);
+	
+    return mix(mix(mix( hash(i+vec3(0,0,0)), 
+                        hash(i+vec3(1,0,0)),f.x),
+                   mix( hash(i+vec3(0,1,0)), 
+                        hash(i+vec3(1,1,0)),f.x),f.y),
+               mix(mix( hash(i+vec3(0,0,1)), 
+                        hash(i+vec3(1,0,1)),f.x),
+                   mix( hash(i+vec3(0,1,1)), 
+                        hash(i+vec3(1,1,1)),f.x),f.y),f.z);
+}
   
 float floorSDF(vec3 p, float h){
   return abs(p.y-h);
@@ -36,9 +60,18 @@ float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
 }
 
 float terrainSDF(vec3 p){
-  float h = length(texture2D(texture1, p.xz/TEXTURESCALE).xz);
-  return p.y-h*5.;
+  //float h = length(texture2D(texture1, p.xz/TEXTURESCALE).xz);
+  float h = noise(vec3(p.xz/5.,0.));
+  return p.y-h*10.;
   return p.y;
+}
+
+float cloudSDF(vec3 p){
+  float scale = 50.;
+  vec2 uv = (p.xz+vec2(scale,u_time*5.))/scale;
+  float displace = length(texture2D(texture1, uv));
+  float displace_big = length(texture2D(texture1, uv/4.));
+  return -p.y +5. +displace*2. + displace_big*10.;
 }
   
 float cubefieldSFD(vec3 p){
@@ -53,9 +86,14 @@ float distToClosest(in vec3 p, out vec3 c){
   float terrainDist = terrainSDF(p);
   if(terrainDist < dist){
     dist = terrainDist;
-    //c = vec3(.5);
-    c = texture2D(texture1, p.xz*.1).xyz;
-
+    c = vec3(0.60, 0.58, 0.44);
+  }
+  float cloudDist = cloudSDF(p);
+  if(cloudDist < dist){
+    dist = cloudDist;
+    vec4 cloudCol = mix(vec4(0.93, 0.82, 0.68, 1.0), vec4(0.68, 0.93, 0.93, 1.0), texture2D(texture1, p.xz*.1).x);
+    cloudCol = mix(vec4(.2), vec4(vec3(0.),1.), (p.y-23.)*.5);
+    c = cloudCol.xyz;
   }
   return dist;
 }
@@ -135,11 +173,11 @@ vec4 shoot(in vec3 o, in vec3 rd){
   bool hit = intersect(o,rd, p ,n,col);
   vec3 lamp_pos = vec3(0., 3., 5.*sin(u_time)-10.);
   if(hit){
-    col = phong(p, o, rd, col,n, lamp_pos,100.);
+    //col = phong(p, o, rd, col,n, lamp_pos,100.);
   }
   float distance_normalized = clamp(length(o-p)/ VIEWDISTANCE, 0., 1.);
   vec3 bgCol = vec3(0.1);
-  col = mix(vec3(1.), bgCol, distance_normalized);
+  col = mix(col, bgCol, distance_normalized);
   
   return vec4(col,1.);
 
