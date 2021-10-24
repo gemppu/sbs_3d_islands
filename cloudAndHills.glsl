@@ -4,7 +4,7 @@ uniform vec2 u_resolution;
 uniform sampler2D texture1;
 uniform vec2 u_tex_resolution;
 
-#define MAXDIST 60.
+#define MAXDIST 100.
 #define MINSTEP .001
 #define MAXSTEPS 100
 #define HITRATIO .001
@@ -49,6 +49,8 @@ float sdRoundBox(vec3 p, vec3 b, float r){
 }
 
 
+
+
 float sdCylinder(vec3 p, vec3 c){
   return length(p.xz-c.xy)-c.z;
 }
@@ -74,22 +76,17 @@ float cloudSDF(vec3 p){
   
 float cubefieldSFD(vec3 p){
   
-  vec3 wp = vec3(mod(p.x, 1.), p.y, mod(p.z, 1.));
-  float y = 10.*noise(vec3(floor(p.xz),0.));
-  vec3 dims = vec3(.5,y,.5);
-  float dist = sdRoundBox(wp, dims, .01);
-  
-  return dist;
+  return 0.;
 }
   
 
 float distToClosest(in vec3 p, out vec3 c){
   c = vec3(0);
   float dist = MAXDIST;
-  float cubeFieldDist = cubefieldSFD(p);
-  if(cubeFieldDist< dist){
-    dist = cubeFieldDist;
-    c = vec3(5.-p.y)/2.;
+  float terrainDist = terrainSDF(p);
+  if(terrainDist < dist){
+    dist = terrainDist;
+    c = vec3(0.60, 0.58, 0.44);
   }
   float cloudDist = cloudSDF(p);
   if(cloudDist < dist){
