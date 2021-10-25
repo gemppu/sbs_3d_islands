@@ -291,18 +291,20 @@ float sdBox( in vec2 p, in vec2 b )
     return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
 }
 
-float crossGrida(in vec2 uv){
+float crossGrid(in vec2 uv){
   float stime = sin((.5+u_time)*4.);
-  float tr = crossSDF(rotate(uv+vec2(-1.),u_time), .1+.05*stime,.1);
-  float tl = crossSDF(rotate(uv+vec2(-1.,0.),u_time), .1+.05*stime,.1);
-  float c = crossSDF(rotate(uv+vec2(-.5),u_time), .1+.05*stime,.1);
-  float br = crossSDF(rotate(uv+vec2(.0),u_time), .1+.05*stime,.1);
-  float bl = crossSDF(rotate(uv+vec2(.0,-1.),u_time), .1+.05*stime,.1);
+  float len = .2 + .05*stime;
+  float th = .2;
+  float tr = crossSDF(rotate(uv+vec2(-1.),u_time), len, th);
+  float tl = crossSDF(rotate(uv+vec2(-1.,0.),u_time), len, th);
+  float c = 9.;//crossSDF(rotate(uv+vec2(-.5),u_time), .1+.05*stime,.1);
+  float br = crossSDF(rotate(uv+vec2(.0),u_time), len, th);
+  float bl = crossSDF(rotate(uv+vec2(.0,-1.),u_time), len, th);
   float dist = min(tr,min(tl,min(c,min(br,bl))));
   return dist;
 }
 
-float crossGrid(in vec2 uv){
+float crossGrid1(in vec2 uv){
   float stime = 1.+sin((.5+u_time)*4.);
   //stime = 1.;
   float c = 9.;//crossSDF(rotate(uv+vec2(-.5,-.5),u_time), .1+.05*stime,.1);
