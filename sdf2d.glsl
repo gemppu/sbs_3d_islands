@@ -41,7 +41,7 @@ float sdBox( in vec2 p, in vec2 b )
     return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
 }
 
-float crossGrid(in vec2 uv){
+float crossGrida(in vec2 uv){
   float stime = sin((.5+u_time)*4.);
   float tr = crossSDF(rotate(uv+vec2(-1.),u_time), .1+.05*stime,.1);
   float tl = crossSDF(rotate(uv+vec2(-1.,0.),u_time), .1+.05*stime,.1);
@@ -52,6 +52,17 @@ float crossGrid(in vec2 uv){
   return dist;
 }
 
+float crossGrid(in vec2 uv){
+  float stime = 1.+sin((.5+u_time)*4.);
+  //stime = 1.;
+  float c = 9.;//crossSDF(rotate(uv+vec2(-.5,-.5),u_time), .1+.05*stime,.1);
+  float t = crossSDF(rotate(uv+vec2(-.5,-1.),u_time), .1+.05*stime,.1);
+  float l = crossSDF(rotate(uv+vec2(.0,-.5),u_time), .1+.05*stime,.1);
+  float r = crossSDF(rotate(uv+vec2(-1.,-.5),u_time), .1+.05*stime,.1);
+  float b = crossSDF(rotate(uv+vec2(-.5,.0),u_time), .1+.05*stime,.1);
+  float dist = min(c,min(t,min(l,min(r,b))));
+  return dist;
+}
 
 void main(){
   //vec2 uv = (gl_FragCoord.xy/vec2(500,500))*2.0-vec2(.5,1.);
