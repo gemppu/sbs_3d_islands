@@ -60,7 +60,7 @@ float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
 
 float cloudSDF(vec3 p){
   float scale = 50.;
-  vec2 uv = (p.xz+vec2(scale,u_time*5.))/scale;
+  vec2 uv = (p.xz+vec2(scale,u_time*.5))/scale;
   float displace = length(texture2D(texture1, uv));
   float displace_big = length(texture2D(texture1, uv/4.));
   return -p.y +5. +displace*2. + displace_big*10.;
@@ -69,16 +69,16 @@ float cloudSDF(vec3 p){
 float terrainSDF(vec3 p){
   //float h = length(texture2D(texture1, p.xz/TEXTURESCALE).xz);
   //float h = noise(vec3(p.xz/10.,0.));
-  float y = 10.*noise(vec3(floor(p.xz),0.));
-  return p.y*y;
+  float y = 5.*noise(vec3(p.xz/5.,0.));
+  return p.y + y;
   return p.y;
 }
   
 float cubefieldSFD(vec3 p){
   
   vec3 wp = vec3(mod(p.x, 1.), p.y, mod(p.z, 1.));
-  float y = 10.*noise(vec3(floor(p.xz),0.));
-  vec3 dims = vec3(.5,y,.5);
+  float y = 10.*noise(vec3(floor(p.xz)/5.,0.));
+  vec3 dims = vec3(.9,y,.9);
   float dist = sdRoundBox(wp, dims, .01);
   
   return dist;
@@ -88,19 +88,21 @@ float cubefieldSFD(vec3 p){
 float distToClosest(in vec3 p, out vec3 c){
   c = vec3(0);
   float dist = MAXDIST;
-  #if 0
+  #if 1
   float cubeFieldDist = cubefieldSFD(p);
   if(cubeFieldDist< dist){
     dist = cubeFieldDist;
     c = vec3(5.-p.y)/2.;
   }
   #endif
+  #if 0 
   float terrainDist = terrainSDF(p);
   if(terrainDist< dist){
     dist = terrainDist;
     c = vec3(5.);
   }
-  #if 0
+  #endif
+  #if 1 
   float cloudDist = cloudSDF(p);
   if(cloudDist < dist){
     dist = cloudDist;
