@@ -57,12 +57,6 @@ float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
   return distance(rayPos,spherePos)-r;
 }
 
-float terrainSDF(vec3 p){
-  //float h = length(texture2D(texture1, p.xz/TEXTURESCALE).xz);
-  float h = noise(vec3(p.xz/10.,0.));
-  return p.y-h*10.;
-  return p.y;
-}
 
 float cloudSDF(vec3 p){
   float scale = 50.;
@@ -70,6 +64,14 @@ float cloudSDF(vec3 p){
   float displace = length(texture2D(texture1, uv));
   float displace_big = length(texture2D(texture1, uv/4.));
   return -p.y +5. +displace*2. + displace_big*10.;
+}
+
+float terrainSDF(vec3 p){
+  //float h = length(texture2D(texture1, p.xz/TEXTURESCALE).xz);
+  //float h = noise(vec3(p.xz/10.,0.));
+  float y = 10.*noise(vec3(floor(p.xz),0.));
+  return p.y*y;
+  return p.y;
 }
   
 float cubefieldSFD(vec3 p){
@@ -86,11 +88,19 @@ float cubefieldSFD(vec3 p){
 float distToClosest(in vec3 p, out vec3 c){
   c = vec3(0);
   float dist = MAXDIST;
+  #if 0
   float cubeFieldDist = cubefieldSFD(p);
   if(cubeFieldDist< dist){
     dist = cubeFieldDist;
     c = vec3(5.-p.y)/2.;
   }
+  #endif
+  float terrainDist = terrainSDF(p);
+  if(terrainDist< dist){
+    dist = terrainDist;
+    c = vec3(5.);
+  }
+  #if 0
   float cloudDist = cloudSDF(p);
   if(cloudDist < dist){
     dist = cloudDist;
@@ -98,6 +108,7 @@ float distToClosest(in vec3 p, out vec3 c){
     cloudCol = mix(vec4(.2), vec4(vec3(0.),1.), (p.y-23.)*.5);
     c = cloudCol.xyz;
   }
+  #endif
   return dist;
 }
 
@@ -205,8 +216,9 @@ vec4 raymarching(){
   
   vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.;
   float aspect = u_resolution.x/u_resolution.y;
-  vec3 o = vec3(5.,15.,8.);
-  vec3 t = vec3(5.,10.,-20.);
+  vec3 o = vec3(u_time,0.,0.) + vec3(5.,15.,8.);
+  vec3 t = vec3(u_time,0.,0.) + vec3(5.,10.,-20.);
+  
   vec3 rd = ray_dir(uv, o, t);
   col = shoot(o,rd);
   return col;

@@ -88,7 +88,7 @@ window.onload = function init() {
     shader1.setUniform2f("u_tex_resolution", 1024., 1024.);
     shader1.setUniform1i("texture1", cloudTexture.textureID());
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    //window.requestAnimationFrame(draw);
+    window.requestAnimationFrame(draw);
   }
   window.requestAnimationFrame(draw);
   start = new Date();
