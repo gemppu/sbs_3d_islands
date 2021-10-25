@@ -64,7 +64,7 @@ float cloudSDF(vec3 p, out float h){
   float displace = length(texture2D(texture1, uv));
   float displace_big = length(texture2D(texture1, uv/4.));
   h = displace*2. + displace_big*4.;
-  return -p.y +25. +displace*2. + displace_big*4.;
+  return -p.y +15. + 2. * h;
 }
 
 float terrainSDF(vec3 p){
@@ -78,9 +78,9 @@ float terrainSDF(vec3 p){
 float cubefieldSFD(vec3 p){
   
   vec3 wp = vec3(mod(p.x, 1.), p.y, mod(p.z, 1.));
-  float y = 10.*noise(vec3(floor(p.xz)/5.,u_time*.01));
+  float y = 5.*noise(vec3(floor(p.xz)/5.,u_time*.01));
   //float y = 10.*noise(vec3(p.xz/5.,0.));
-  vec3 dims = vec3(.9,y,.9);
+  vec3 dims = vec3(.5,y+.5,.5);
   float dist = sdRoundBox(wp, dims, .01);
   
   return dist;
@@ -98,7 +98,7 @@ float distToClosest(in vec3 p, out vec3 c){
     vec3 botCol = vec3(0.76, 0.38, 0.04);
     c = mix(botCol, topCol, p.y/10.);
     c = vec3(mod(u_time,1.)*(20.)-10.-p.y);
-    //c = vec3(5.-p.y)/2.;
+    c = vec3(5.-p.y)/2.;
   }
   #endif
   #if 0 
@@ -120,6 +120,11 @@ float distToClosest(in vec3 p, out vec3 c){
     c = cloudCol.xyz;
   }
   #endif
+  if(p.y<0.){
+    dist = p.y;
+    c = vec3(2.);
+  }
+
   return dist;
 }
 
@@ -201,7 +206,7 @@ vec4 shoot(in vec3 o, in vec3 rd){
     //col = phong(p, o, rd, col,n, lamp_pos,100.);
   }
   float distance_normalized = clamp(length(o-p)/ VIEWDISTANCE, 0., 1.);
-  vec3 bgCol = vec3(0.1);
+  vec3 bgCol = vec3(0.);
   col = mix(col, bgCol, distance_normalized);
   
   return vec4(col,1.);
@@ -228,8 +233,8 @@ vec4 raymarching(){
   vec2 uv = (gl_FragCoord.xy/u_resolution)*2.0-1.;
   float aspect = u_resolution.x/u_resolution.y;
   vec3 timeOffset = vec3(u_time,0.,-2. * u_time);
-  vec3 o =  timeOffset + vec3(5.,15.,8.);
-  vec3 t =  timeOffset + vec3(5.,10.,-20.);
+  vec3 o =  timeOffset + vec3(5.,11.,8.);
+  vec3 t =  timeOffset + vec3(5.,10.,-16.);
   
   vec3 rd = ray_dir(uv, o, t);
   col = shoot(o,rd);
