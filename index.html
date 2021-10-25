@@ -308,12 +308,13 @@ float sphereSDF(vec3 rayPos, float r, vec3 spherePos){
 }
 
 
-float cloudSDF(vec3 p){
+float cloudSDF(vec3 p, out float h){
   float scale = 50.;
   vec2 uv = (p.xz+vec2(scale,u_time*.5))/scale;
   float displace = length(texture2D(texture1, uv));
   float displace_big = length(texture2D(texture1, uv/4.));
-  return -p.y +5. +displace*2. + displace_big*10.;
+  h = displace*2. + displace_big*4.;
+  return -p.y +25. +displace*2. + displace_big*4.;
 }
 
 float terrainSDF(vec3 p){
@@ -327,7 +328,7 @@ float terrainSDF(vec3 p){
 float cubefieldSFD(vec3 p){
   
   vec3 wp = vec3(mod(p.x, 1.), p.y, mod(p.z, 1.));
-  float y = 10.*noise(vec3(floor(p.xz)/5.,u_time));
+  float y = 10.*noise(vec3(floor(p.xz)/5.,u_time*.01));
   //float y = 10.*noise(vec3(p.xz/5.,0.));
   vec3 dims = vec3(.9,y,.9);
   float dist = sdRoundBox(wp, dims, .01);
@@ -339,13 +340,14 @@ float cubefieldSFD(vec3 p){
 float distToClosest(in vec3 p, out vec3 c){
   c = vec3(0);
   float dist = MAXDIST;
-  #if 1
+  #if 1 
   float cubeFieldDist = cubefieldSFD(p);
   if(cubeFieldDist< dist){
     dist = cubeFieldDist;
     vec3 topCol = vec3(0.82, 0.37, 0.78);
     vec3 botCol = vec3(0.76, 0.38, 0.04);
     c = mix(botCol, topCol, p.y/10.);
+    c = vec3(mod(u_time,1.)*(20.)-10.-p.y);
     //c = vec3(5.-p.y)/2.;
   }
   #endif
@@ -357,11 +359,14 @@ float distToClosest(in vec3 p, out vec3 c){
   }
   #endif
   #if 1 
-  float cloudDist = cloudSDF(p);
+  float cloudHeight;
+  float cloudDist = cloudSDF(p, cloudHeight);
   if(cloudDist < dist){
     dist = cloudDist;
     vec4 cloudCol = mix(vec4(0.93, 0.82, 0.68, 1.0), vec4(0.68, 0.93, 0.93, 1.0), texture2D(texture1, p.xz*.1).x);
-    cloudCol = mix(vec4(.2), vec4(vec3(0.),1.), (p.y-23.)*.5);
+    //cloudCol = mix(vec4(.2), vec4(vec3(0.),1.), (p.z-sin(u_time)*15.)*.1);
+    cloudCol = mix(vec4(.2), vec4(vec3(0.),1.), mod(cloudHeight,2.));
+    //cloudcol = vec4(cloudHeight);
     c = cloudCol.xyz;
   }
   #endif
