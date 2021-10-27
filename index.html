@@ -294,7 +294,7 @@ float sdBox( in vec2 p, in vec2 b )
 float crossGrid(in vec2 uv){
   float stime = sin((.5+u_time)*4.);
   float len = .2 + .05*stime;
-  float th = .2;
+  float th = .2 + .05*stime;
   float tr = crossSDF(rotate(uv+vec2(-1.),u_time), len, th);
   float tl = crossSDF(rotate(uv+vec2(-1.,0.),u_time), len, th);
   float c = 9.;//crossSDF(rotate(uv+vec2(-.5),u_time), .1+.05*stime,.1);
@@ -324,7 +324,7 @@ void main(){
   uv = mod(uv, 1.);
   float stime = sin((.5+u_time)*4.);
   //vec4 col = vec4(vec3(mod(crossSDF(rotate(uv+vec2(.0),u_time),.1+.05*stime,.1),.1)),1.);
-  vec4 col = vec4(vec3(crossGrid(uv)),1.);
+  vec4 col = vec4(vec3(clamp(10.*crossGrid(uv),0.,1.)),1.);
   //vec4 col = vec4(vec3(sdBox(uv,vec2(.5))),1.);
   //gl_FragColor = vec4(uv, 0., 1.); 
   gl_FragColor = col;
