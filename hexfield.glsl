@@ -4,17 +4,22 @@ uniform vec2 u_resolution;
 uniform sampler2D texture1;
 uniform vec2 u_tex_resolution;
 
-#define MAXDIST 60.
+#define MAXDIST 256.
 #define MINSTEP .001
-#define MAXSTEPS 100
+#define MAXSTEPS 128
 #define HITRATIO .001
 #define EPSILON .0001
-#define VIEWDISTANCE 50.
+#define VIEWDISTANCE 196.
 #define SHARDNESS 32.
 #define EYEWIDTH .1
 #define TEXTURESCALE 50.
 
-
+//COLOR PALLETTE
+#define COL_BG vec4(1.00, 0.16, 0.46, 1.0)
+#define COL_CLOUD vec4(0.55, 0.12, 1.00, 1.0)
+#define COL_FLOOR vec4(0.95, 0.13, 1.00, 1.0)
+#define COL_ORANGE vec4(1.00, 0.56, 0.12, 1.0)
+#define COL_YELLOW vec4(1.00, 0.83, 0.10, 1.0)
 
 float hash(vec3 p)  // replace this by something better
 {
@@ -80,7 +85,7 @@ float cubefieldSFD(vec3 p){
   vec3 wp = vec3(mod(p.x, 1.), p.y, mod(p.z, 1.));
   float y = 5.*noise(vec3(floor(p.xz)/5.,u_time*.01));
   //float y = 10.*noise(vec3(p.xz/5.,0.));
-  vec3 dims = vec3(.5,y+.5,.5);
+  vec3 dims = vec3(.8,y+.5,.8);
   float dist = sdRoundBox(wp, dims, .01);
   
   return dist;
@@ -96,9 +101,11 @@ float distToClosest(in vec3 p, out vec3 c){
     dist = cubeFieldDist;
     vec3 topCol = vec3(0.82, 0.37, 0.78);
     vec3 botCol = vec3(0.76, 0.38, 0.04);
-    c = mix(botCol, topCol, p.y/10.);
-    c = vec3(mod(u_time,1.)*(20.)-10.-p.y);
-    c = vec3(5.-p.y)/2.;
+    botCol = COL_YELLOW.rgb;
+    topCol = COL_ORANGE.rgb;
+    c = mix(topCol, botCol, 1.-p.y*.5);
+    //c = vec3(mod(u_time,1.)*(20.)-10.-p.y);
+    //c = vec3(5.-p.y)/2.;
   }
   #endif
   #if 0 
@@ -115,8 +122,8 @@ float distToClosest(in vec3 p, out vec3 c){
     dist = cloudDist;
     vec4 cloudCol = mix(vec4(0.93, 0.82, 0.68, 1.0), vec4(0.68, 0.93, 0.93, 1.0), texture2D(texture1, p.xz*.1).x);
     //cloudCol = mix(vec4(.2), vec4(vec3(0.),1.), (p.z-sin(u_time)*15.)*.1);
-    cloudCol = mix(vec4(.2), vec4(vec3(0.),1.), mod(cloudHeight,2.));
-    //cloudcol = vec4(cloudHeight);
+    //cloudCol = mix(vec4(.2), vec4(vec3(0.),1.), mod(cloudHeight,1.));
+    cloudCol = COL_CLOUD * (cloudHeight*.1-.5);
     c = cloudCol.xyz;
   }
   #endif
@@ -197,7 +204,7 @@ vec3 phong(vec3 p, vec3 o, vec3 rd, vec3 col, vec3 n, vec3 lamp_pos, float lamp_
 }
 
 vec4 shoot(in vec3 o, in vec3 rd){
-  vec3 col = vec3(0.);
+  vec3 col = COL_BG.rgb;
   vec3 n = vec3(0.);
   vec3 p = o;
   bool hit = intersect(o,rd, p ,n,col);
@@ -206,7 +213,7 @@ vec4 shoot(in vec3 o, in vec3 rd){
     //col = phong(p, o, rd, col,n, lamp_pos,100.);
   }
   float distance_normalized = clamp(length(o-p)/ VIEWDISTANCE, 0., 1.);
-  vec3 bgCol = vec3(0.);
+  vec3 bgCol = COL_BG.rgb;
   col = mix(col, bgCol, distance_normalized);
   
   return vec4(col,1.);
