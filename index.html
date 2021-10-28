@@ -256,8 +256,9 @@ uniform vec2 u_tex_resolution;
 
 #define MAXDIST 256.
 #define MINSTEP .001
-#define MAXSTEPS 128
+#define MAXSTEPS 64
 #define HITRATIO .001
+#define STEPRATIO .5
 #define EPSILON .0001
 #define VIEWDISTANCE 196.
 #define SHARDNESS 32.
@@ -406,6 +407,7 @@ bool intersect(in vec3 o, in vec3 rd, out vec3 pos, out vec3 normal, out vec3 co
   for(int steps = 0; steps<MAXSTEPS; steps++){
     stpLen = distToClosest(pos, col);
     if(stpLen<MINSTEP) stpLen=MINSTEP;
+    stpLen *= STEPRATIO;
     pos += stpLen*rd;
     distTravelled += stpLen;
     if(abs(stpLen) < HITRATIO * distance(o,pos)){
@@ -413,7 +415,6 @@ bool intersect(in vec3 o, in vec3 rd, out vec3 pos, out vec3 normal, out vec3 co
       return true;
     }
     if(distTravelled > MAXDIST || steps+1 == MAXSTEPS){
-      col = vec3(0.);
       return false;
     }
   }
