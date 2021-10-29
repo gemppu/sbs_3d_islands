@@ -4,6 +4,6 @@ echo "<script id=\"fsCloud\" type=\"notjs\">" >> index.html
 cat noise.glsl >> index.html
 echo "</script>" >> index.html
 echo "<script id=\"fragment\" type=\"notjs\">" >> index.html
-cat hexfield.glsl >> index.html
+cat circles.glsl >> index.html
 echo "</script>" >> index.html
 cat b.txt >> index.html
