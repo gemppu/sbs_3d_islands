@@ -255,11 +255,11 @@ uniform sampler2D texture1;
 uniform vec2 u_tex_resolution;
 
 #define MAXDIST 256.
-#define MINSTEP .001
-#define MAXSTEPS 64
-#define HITRATIO .001
+#define MINSTEP .1
+#define MAXSTEPS 400 
+#define HITRATIO .01
 #define STEPRATIO .5
-#define STEPLEN .01
+#define STEPLEN .05
 #define EPSILON .0001
 #define VIEWDISTANCE 196.
 #define SHARDNESS 32.
@@ -334,10 +334,11 @@ float terrainSDF(vec3 p){
   
 float cubefieldSFD(vec3 p){
   
-  vec3 wp = vec3(mod(p.x, 1.), p.y, mod(p.z, 1.));
+  float w = 1.;
+  vec3 wp = vec3(mod(p.x, w), p.y, mod(p.z, w));
   float y = 5.*noise(vec3(floor(p.xz)/5.,u_time*.01));
   //float y = 10.*noise(vec3(p.xz/5.,0.));
-  vec3 dims = vec3(.8,y+.5,.8);
+  vec3 dims = vec3(.8*w,y+.5,.8*w);
   float dist = sdRoundBox(wp, dims, .01);
   
   return dist;
@@ -347,7 +348,7 @@ float cubefieldSFD(vec3 p){
 float distToClosest(in vec3 p, out vec3 c){
   c = vec3(0);
   float dist = MAXDIST;
-  #if 0
+  #if 1
   float cubeFieldDist = cubefieldSFD(p);
   if(cubeFieldDist< dist){
     dist = cubeFieldDist;
@@ -367,7 +368,7 @@ float distToClosest(in vec3 p, out vec3 c){
     c = vec3(5., 0., 0.);
   }
   #endif
-  #if 1 
+  #if 1
   float cloudHeight;
   float cloudDist = cloudSDF(p, cloudHeight);
   if(cloudDist < dist){
@@ -401,17 +402,14 @@ vec3 getNormal(vec3 position){
 
 bool intersect(in vec3 o, in vec3 rd, out vec3 pos, out vec3 normal, out vec3 col){
   pos = o;
-  float stpLen = 0.;
   float distTravelled = 0.;
   col = vec3(0.);
   normal = vec3(0.);
   for(int steps = 0; steps<MAXSTEPS; steps++){
     float dist = distToClosest(pos, col);
-    if(dist<MINSTEP) stpLen=MINSTEP;
-    stpLen = STEPLEN;
-    pos += stpLen*rd;
-    distTravelled += stpLen;
-    if(abs(dist) < HITRATIO * distance(o,pos)){
+    pos += STEPLEN*rd;
+    distTravelled += STEPLEN;
+    if(dist < HITRATIO * distance(o,pos)){
       normal = getNormal(pos);
       return true;
     }
@@ -422,27 +420,6 @@ bool intersect(in vec3 o, in vec3 rd, out vec3 pos, out vec3 normal, out vec3 co
   return false;
 }
 
-float shadow(vec3 o, vec3 lamp_pos){
-  float res = 1.0;
-  float ph = 1e20;
-  vec3 p = o;
-  vec3 ld = normalize(lamp_pos-p); // light direction
-  float dt = 0.; // distance travelled
-  float sl = 0.; // step length
-  float c = MAXDIST; //closest dist
-  vec3 col = vec3(0.);
-  for(int steps=0; steps<MAXSTEPS; steps++){
-    sl = distToClosest(p,col);
-    if(sl<MINSTEP && steps == 0) sl=MINSTEP;
-    if(sl<HITRATIO) return 0.1;
-    float y = sl*sl/(2.0*ph);
-    float d = sqrt(sl*sl-y*y);
-    res = min(res, SHARDNESS*d/max(0.0, dt-y));
-    p += ld*sl;
-    dt += sl;
-  }
-  return res;
-}
 
 vec3 phong(vec3 p, vec3 o, vec3 rd, vec3 col, vec3 n, vec3 lamp_pos, float lamp_str){
   vec3 ld = normalize(lamp_pos-p);
@@ -493,12 +470,13 @@ vec4 raymarching(){
   float aspect = u_resolution.x/u_resolution.y;
   vec3 timeOffset = vec3(u_time,0.,-2. * u_time);
   vec3 o =  timeOffset + vec3(5.,11.,8.);
-  vec3 t =  timeOffset + vec3(5.,10.,-16.);
+  vec3 t =  timeOffset + vec3(5.,1.,1.);
   
   vec3 rd = ray_dir(uv, o, t);
   col = shoot(o,rd);
   return col;
 }
+
 void main(){
   gl_FragColor = gamma_correction(raymarching(), .5);
 }
